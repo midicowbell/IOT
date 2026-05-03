@@ -58,7 +58,7 @@ func (s *Shelf) NeedsRefill() bool {
 }
 
 func (s *Shelf) GetQuantity() int {
-	if s.Product.Weight == 0 {
+	if s.Product == nil || s.Product.Weight == 0 {
 		return 0
 	}
 	return int(s.CurrWeight) / int(s.Product.Weight)
