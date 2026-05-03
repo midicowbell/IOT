@@ -32,7 +32,7 @@ func (s *StockService) UpdateProductWeight(shelfID int, newWeight float64) (stri
 		return "", err
 	}
 	if shelf.NeedsRefill() {
-		return fmt.Sprintf("АЛЕРТ: На полке %d (%s) заканчивается товар! Осталось: %d шт.",
+		return fmt.Sprintf("ALERT: На полке %d (%s) заканчивается товар! Осталось: %d шт.",
 			shelf.ID, shelf.Product.Name, shelf.GetQuantity()), nil
 	}
 	return "Статус: Вес в норме", nil

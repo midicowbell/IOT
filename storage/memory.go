@@ -15,7 +15,7 @@ func NewMemStorage() *MemStorage {
 	return &MemStorage{shelves: make(map[int]*models.Shelf)}
 }
 
-func (m *MemStorage) GetShelves() []]models.Shelf {
+func (m *MemStorage) GetShelves() []models.Shelf {
 	m.mtx.RLock()
 	defer m.mtx.RUnlock()
 	ans := make([]models.Shelf, 0, len(m.shelves))
