@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"time"
 )
 
@@ -32,4 +33,19 @@ func NewErrorDTO(err error) ErrorDTO {
 		Message: err.Error(),
 		Time:    time.Now(),
 	}
+}
+
+func HTTPError(w http.ResponseWriter, errDTO ErrorDTO, err error) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch {
+	case errors.Is(err, ShelfIsNotFound):
+		w.WriteHeader(http.StatusNotFound)
+	case errors.Is(err, ShelfIsEmpty), errors.Is(err, ErrorNegativeWeight):
+		w.WriteHeader(http.StatusBadRequest)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	w.Write([]byte(errDTO.ToString()))
 }

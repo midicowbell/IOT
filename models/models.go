@@ -1,11 +1,12 @@
 package models
 
+import "iot/models"
+
 type Product struct {
 	ID        int     `json:"id"`
 	Name      string  `json:"name"`
 	Weight    float64 `json:"weight"`
 	MinWeight float64 `json:"min_weight"`
-	Unit      string  `json:"unit"`
 }
 
 type Shelf struct {
@@ -14,7 +15,7 @@ type Shelf struct {
 	CurrWeight float64  `json:"curr_weight"`
 }
 
-func NewProduct(id int, name string, weight float64, minWeight float64, unit string) (*Product, error) {
+func NewProduct(id int, name string, weight float64, minWeight float64) (*Product, error) {
 	if weight < 0 || minWeight < 0 {
 		return nil, ErrorNegativeWeight
 	}
@@ -23,7 +24,6 @@ func NewProduct(id int, name string, weight float64, minWeight float64, unit str
 		Name:      name,
 		Weight:    weight,
 		MinWeight: minWeight,
-		Unit:      unit,
 	}, nil
 }
 func NewShelf(id int, weight float64) (*Shelf, error) {
@@ -37,6 +37,21 @@ func NewShelf(id int, weight float64) (*Shelf, error) {
 }
 func (s *Shelf) SetProduct(p *Product) {
 	s.Product = p
+}
+
+func (s *Shelf) DeleteProduct() error {
+	if s.Product == nil {
+		return models.ShelfIsEmpty
+	}
+	s.Product = nil
+	return nil
+}
+
+func (s *Shelf) GetProduct() (*Product, error) {
+	if s.Product == nil {
+		return nil, ShelfIsEmpty
+	}
+	return s.Product, nil
 }
 
 func (s *Shelf) UpdateWeight(weight float64) error {

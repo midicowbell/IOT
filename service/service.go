@@ -79,3 +79,19 @@ func (s *StockService) FillShelf(shelfID int, product *models.Product) error {
 	shelf.SetProduct(product)
 	return nil
 }
+
+func (s *StockService) DeleteProduct(shelfID int) error {
+	shelf, err := s.repo.GetShelfByID(shelfID)
+	if err != nil {
+		return err
+	}
+	return shelf.DeleteProduct()
+}
+
+func (s *StockService) GetProduct(shelfID int) (*models.Product, error) {
+	shelf, err := s.repo.GetShelfByID(shelfID)
+	if err != nil {
+		return nil, err
+	}
+	return shelf.GetProduct()
+}
