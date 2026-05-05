@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"iot/models"
 	"iot/storage"
 )
 
@@ -35,7 +36,7 @@ func (s *StockService) UpdateProductWeight(shelfID int, newWeight float64) (stri
 		return fmt.Sprintf("ALERT: На полке %d (%s) заканчивается товар! Осталось: %d шт.",
 			shelf.ID, shelf.Product.Name, shelf.GetQuantity()), nil
 	}
-	return "Статус: Вес в норме", nil
+	return "STATUS: Вес в норме", nil
 }
 
 func (s *StockService) GetFullStatus() []ShelfStatus {
@@ -56,4 +57,25 @@ func (s *StockService) GetFullStatus() []ShelfStatus {
 		})
 	}
 	return report
+}
+
+func (s *StockService) AddShelf(shelf *models.Shelf) error {
+	return s.repo.AddShelf(shelf)
+}
+
+func (s *StockService) DeleteShelf(id int) error {
+	return s.repo.DeleteShelf(id)
+}
+
+func (s *StockService) GetShelfByID(id int) (*models.Shelf, error) {
+	return s.repo.GetShelfByID(id)
+}
+
+func (s *StockService) FillShelf(shelfID int, product *models.Product) error {
+	shelf, err := s.repo.GetShelfByID(shelfID)
+	if err != nil {
+		return err
+	}
+	shelf.SetProduct(product)
+	return nil
 }
