@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"iot/handlers"
 	"net/http"
 
@@ -34,5 +35,4 @@ func (s *Server) StartServer() error {
 		return err
 	}
 	return nil
-	}
 }
