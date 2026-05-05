@@ -45,7 +45,7 @@ type HTTPHandlers struct {
 	service *service.StockService
 }
 
-func NewHTTPHandler(service *service.StockService) *HTTPHandlers {
+func NewHTTPHandlers(service *service.StockService) *HTTPHandlers {
 	return &HTTPHandlers{
 		service: service,
 	}

@@ -1,12 +1,10 @@
 package models
 
-import "iot/models"
-
 type Product struct {
 	ID        int     `json:"id"`
 	Name      string  `json:"name"`
-	Weight    float64 `json:"weight"`
-	MinWeight float64 `json:"min_weight"`
+	Weight    float64 `json:"weight"`     // weight is given in grams only
+	MinWeight float64 `json:"min_weight"` // weight is given in grams only
 }
 
 type Shelf struct {
@@ -41,7 +39,7 @@ func (s *Shelf) SetProduct(p *Product) {
 
 func (s *Shelf) DeleteProduct() error {
 	if s.Product == nil {
-		return models.ShelfIsEmpty
+		return ShelfIsEmpty
 	}
 	s.Product = nil
 	return nil
@@ -73,7 +71,7 @@ func (s *Shelf) GetQuantity() int {
 	if s.Product == nil || s.Product.Weight == 0 {
 		return 0
 	}
-	return int(s.CurrWeight) / int(s.Product.Weight)
+	return int(s.CurrWeight / s.Product.Weight)
 }
 
 func (p *Product) UpdateMinWeight(minWeight float64) error {

@@ -7,7 +7,7 @@ import (
 )
 
 type ShelfStatus struct {
-	ID            int     `json:"id"`
+	ID            int     `json:"shelf_id"`
 	ProductName   string  `json:"product_name"`
 	Quantity      int     `json:"quantity"`
 	CurrentWeight float64 `json:"current_weight"`
@@ -45,12 +45,20 @@ func (s *StockService) GetFullStatus() []ShelfStatus {
 
 	for _, shelf := range shelves {
 		status := "OK"
-		if shelf.NeedsRefill() {
-			status = "REFILL"
+		productName := "Empty"
+
+		if shelf.Product != nil {
+			productName = shelf.Product.Name
+			if shelf.NeedsRefill() {
+				status = "REFILL"
+			}
+		} else {
+			status = "EMPTY"
 		}
+
 		report = append(report, ShelfStatus{
 			ID:            shelf.ID,
-			ProductName:   shelf.Product.Name,
+			ProductName:   productName,
 			Quantity:      shelf.GetQuantity(),
 			CurrentWeight: shelf.CurrWeight,
 			Status:        status,
