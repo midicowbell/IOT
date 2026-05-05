@@ -122,7 +122,9 @@ func (h *HTTPHandlers) DeleteShelf(w http.ResponseWriter, r *http.Request) {
 	idStr := vars["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		panic(err)
+		errDTO := models.NewErrorDTO(errors.New("invalid shelf ID format"))
+		http.Error(w, errDTO.ToString(), http.StatusBadRequest)
+		return
 	}
 	if err := h.service.DeleteShelf(id); err != nil {
 		errDTO := models.NewErrorDTO(err)

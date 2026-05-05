@@ -2,6 +2,8 @@ package server
 
 import (
 	"iot/handlers"
+
+	"github.com/gorilla/mux"
 )
 
 type Server struct {
@@ -14,7 +16,11 @@ func NewServer(handlers *handlers.HTTPHandlers) *Server {
 	}
 }
 
-// func (s *Server) StartServer() error {
-// 	router := mux.NewRouter()
+func (s *Server) StartServer() error {
+	router := mux.NewRouter()
+	router.HandleFunc("/shelves", s.handlers.HandleGetStatus).Methods("GET")
+	router.HandleFunc("/shelves/{id}/weight", s.handlers.HandleUpdateWeight).Methods("PATCH")
+	router.HandleFunc("/shelves", s.handlers.HandleAddShelf).Methods("POST")
+	router.HandleFunc("/shelves/{id}", s.handlers.DeleteShelf).Methods("DELETE")
 
-// }
+}
