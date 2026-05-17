@@ -31,6 +31,7 @@ type ProductDTO struct {
 	ShelfID    int     `json:"shelf_id"`
 	Name       string  `json:"name"`
 	UnitWeight float64 `json:"unit_weight"`
+	Quantity   int     `json:"quantity"`
 	MinWeight  float64 `json:"min_weight"`
 }
 
@@ -143,7 +144,7 @@ func (h *HTTPHandlers) HandleAddProduct(w http.ResponseWriter, r *http.Request) 
 		models.HTTPError(w, errDTO, err)
 		return
 	}
-	if err := h.service.FillShelf(recProduct.ShelfID, product); err != nil {
+	if err := h.service.FillShelf(recProduct.ShelfID, product, recProduct.Quantity); err != nil {
 		errDTO := models.NewErrorDTO(err)
 		models.HTTPError(w, errDTO, err)
 		return

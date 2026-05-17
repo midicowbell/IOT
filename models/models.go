@@ -33,8 +33,9 @@ func NewShelf(id int, weight float64) (*Shelf, error) {
 		CurrWeight: weight,
 	}, nil
 }
-func (s *Shelf) SetProduct(p *Product) {
+func (s *Shelf) SetProduct(p *Product, quont int) {
 	s.Product = p
+	s.CurrWeight = s.Product.Weight * float64(quont)
 }
 
 func (s *Shelf) DeleteProduct() error {

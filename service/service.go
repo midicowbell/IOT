@@ -79,12 +79,12 @@ func (s *StockService) GetShelfByID(id int) (*models.Shelf, error) {
 	return s.repo.GetShelfByID(id)
 }
 
-func (s *StockService) FillShelf(shelfID int, product *models.Product) error {
+func (s *StockService) FillShelf(shelfID int, product *models.Product, quont int) error {
 	shelf, err := s.repo.GetShelfByID(shelfID)
 	if err != nil {
 		return err
 	}
-	shelf.SetProduct(product)
+	shelf.SetProduct(product, quont)
 	return nil
 }
 
