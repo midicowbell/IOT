@@ -1,18 +1,12 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"iot/models"
 	"iot/storage"
 )
 
-type ShelfStatus struct {
-	ID            int     `json:"shelf_id"`
-	ProductName   string  `json:"product_name"`
-	Quantity      int     `json:"quantity"`
-	CurrentWeight float64 `json:"current_weight"`
-	Status        string  `json:"status"`
-}
 type StockService struct {
 	repo storage.Storage
 }
@@ -23,13 +17,18 @@ func NewStockService(s storage.Storage) *StockService {
 	}
 }
 
-func (s *StockService) UpdateProductWeight(shelfID int, newWeight float64) (string, error) {
-	err := s.repo.UpdateWeight(shelfID, newWeight)
+func (s *StockService) UpdateProductWeight(ctx context.Context, shelfID int, newWeight float64) (string, error) {
+	shelf, err := s.repo.GetShelfByID(ctx, shelfID)
 	if err != nil {
 		return "", err
 	}
-	shelf, err := s.repo.GetShelfByID(shelfID)
-	if err != nil {
+	status := "OK"
+	if shelf.Product == nil {
+		status = "EMPTY"
+	} else {
+		status = "REFILL"
+	}
+	if err := s.repo.UpdateWeight(ctx, shelfID, newWeight, status); err != nil {
 		return "", err
 	}
 	if shelf.NeedsRefill() {
@@ -39,65 +38,52 @@ func (s *StockService) UpdateProductWeight(shelfID int, newWeight float64) (stri
 	return "STATUS: Вес в норме", nil
 }
 
-func (s *StockService) GetFullStatus() []ShelfStatus {
-	shelves := s.repo.GetShelves()
-	var report []ShelfStatus
-
+func (s *StockService) GetFullStatus(ctx context.Context) ([]models.Shelf, error) {
+	shelves, err := s.repo.GetShelves(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var report []models.Shelf
 	for _, shelf := range shelves {
-		status := "OK"
-		productName := "Empty"
-
-		if shelf.Product != nil {
-			productName = shelf.Product.Name
-			if shelf.NeedsRefill() {
-				status = "REFILL"
-			}
-		} else {
-			status = "EMPTY"
-		}
-
-		report = append(report, ShelfStatus{
-			ID:            shelf.ID,
-			ProductName:   productName,
-			Quantity:      shelf.GetQuantity(),
-			CurrentWeight: shelf.CurrWeight,
-			Status:        status,
-		})
+		shelf.Quantity = shelf.GetQuantity()
+		report = append(report, shelf)
 	}
-	return report
+	return report, nil
 }
 
-func (s *StockService) AddShelf(shelf *models.Shelf) error {
-	return s.repo.AddShelf(shelf)
+func (s *StockService) AddShelf(ctx context.Context, shelf *models.Shelf) error {
+	return s.repo.AddShelf(ctx, shelf)
 }
 
-func (s *StockService) DeleteShelf(id int) error {
-	return s.repo.DeleteShelf(id)
+func (s *StockService) DeleteShelf(ctx context.Context, shelfId int) error {
+	return s.repo.DeleteShelf(ctx, shelfId)
 }
 
-func (s *StockService) GetShelfByID(id int) (*models.Shelf, error) {
-	return s.repo.GetShelfByID(id)
+func (s *StockService) GetShelfByID(ctx context.Context, shelfId int) (*models.Shelf, error) {
+	return s.repo.GetShelfByID(ctx, shelfId)
 }
 
-func (s *StockService) FillShelf(shelfID int, product *models.Product) error {
-	shelf, err := s.repo.GetShelfByID(shelfID)
+func (s *StockService) FillShelf(ctx context.Context, shelfID int, product *models.Product) error {
+	_, err := s.repo.GetShelfByID(ctx, shelfID)
 	if err != nil {
 		return err
 	}
-	shelf.SetProduct(product)
-	return nil
+	return s.repo.UpdateShelfProduct(ctx, shelfID, &product.ID)
 }
 
-func (s *StockService) DeleteProduct(shelfID int) error {
-	shelf, err := s.repo.GetShelfByID(shelfID)
+func (s *StockService) DeleteProduct(ctx context.Context, shelfID int) error {
+	shelf, err := s.repo.GetShelfByID(ctx, shelfID)
 	if err != nil {
 		return err
 	}
-	return shelf.DeleteProduct()
+	if shelf.Product == nil {
+		return models.ShelfIsEmpty
+	}
+	return s.repo.UpdateShelfProduct(ctx, shelfID, nil)
 }
 
-func (s *StockService) GetProduct(shelfID int) (*models.Product, error) {
-	shelf, err := s.repo.GetShelfByID(shelfID)
+func (s *StockService) GetProduct(ctx context.Context, shelfID int) (*models.Product, error) {
+	shelf, err := s.repo.GetShelfByID(ctx, shelfID)
 	if err != nil {
 		return nil, err
 	}
