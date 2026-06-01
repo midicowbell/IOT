@@ -12,4 +12,5 @@ type Storage interface {
 	UpdateShelfProduct(ctx context.Context, shelfID int, productID *int) error
 	AddShelf(ctx context.Context, shelf *models.Shelf) error
 	DeleteShelf(ctx context.Context, shelfID int) error
+	AddProduct(ctx context.Context, product *models.Product) error
 }

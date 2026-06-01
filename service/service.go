@@ -68,6 +68,9 @@ func (s *StockService) FillShelf(ctx context.Context, shelfID int, product *mode
 	if err != nil {
 		return err
 	}
+	if err := s.repo.AddProduct(ctx, product); err != nil {
+		return fmt.Errorf("не удалось создать продукт в справочнике: %w", err)
+	}
 	return s.repo.UpdateShelfProduct(ctx, shelfID, &product.ID)
 }
 

@@ -76,7 +76,7 @@ func (s *PostgresStorage) GetShelfByID(ctx context.Context, shelfID int) (*model
 	SELECT s.shelf_id, s.current_weight, s.status,
 		s.updated_at, p.product_id, p.name, p.weight_grams, p.min_weight_grams
 		FROM shelves s
-		LEFT JOIN products p on s.product_id = product_id
+		LEFT JOIN products p on s.product_id = p.product_id
 		WHERE s.shelf_id = $1;
 	`
 	row := s.pool.QueryRow(ctx, query, shelfID)
@@ -141,17 +141,16 @@ func (s *PostgresStorage) UpdateShelfProduct(ctx context.Context, shelfID int, p
 
 func (s *PostgresStorage) AddShelf(ctx context.Context, shelf *models.Shelf) error {
 	query := `
-		INSERT INTO shelves(product_id, current_weight, status, updated_at)
-		VALUES($1, $2, $3, CURRENT_TIMESTAMP)
-		RETURNING shelf_id;
+		INSERT INTO shelves(shelf_id, product_id, current_weight, status, updated_at)
+		VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP);
 	`
 	var productID *int
 	if shelf.Product != nil {
 		productID = &shelf.Product.ID
 	}
-	err := s.pool.QueryRow(ctx, query, productID, shelf.CurrentWeight, shelf.Status).Scan(&shelf.ID)
+	_, err := s.pool.Exec(ctx, query, shelf.ID, productID, shelf.CurrentWeight, shelf.Status)
 	if err != nil {
-		return err
+		return fmt.Errorf("ошибка вставки полки в БД: %w", err)
 	}
 	return nil
 }
@@ -162,6 +161,19 @@ func (s *PostgresStorage) DeleteShelf(ctx context.Context, shelfID int) error {
 	`
 	if _, err := s.pool.Exec(ctx, query, shelfID); err != nil {
 		return err
+	}
+	return nil
+}
+func (s *PostgresStorage) AddProduct(ctx context.Context, product *models.Product) error {
+	query := `
+		INSERT INTO products (product_id, name, weight_grams, min_weight_grams)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (product_id) DO UPDATE 
+		SET name = $2, weight_grams = $3, min_weight_grams = $4;
+	`
+	_, err := s.pool.Exec(ctx, query, product.ID, product.Name, product.Weight, product.MinWeight)
+	if err != nil {
+		return fmt.Errorf("ошибка сохранения продукта в БД: %w", err)
 	}
 	return nil
 }
