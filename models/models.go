@@ -1,5 +1,10 @@
 package models
 
+import (
+	"math"
+	"time"
+)
+
 type Product struct {
 	ID        int     `json:"id"`
 	Name      string  `json:"name"`
@@ -8,9 +13,12 @@ type Product struct {
 }
 
 type Shelf struct {
-	ID         int      `json:"id"`
-	Product    *Product `json:"product"`
-	CurrWeight float64  `json:"curr_weight"`
+	ID            int      `json:"id"`
+	Product       *Product `json:"product"`
+	Quantity      int      `json:"quantity"`
+	CurrentWeight float64  `json:"current_weight"`
+	Status        string   `json:"status"`
+	Updated_at    time.Time
 }
 
 func NewProduct(id int, name string, weight float64, minWeight float64) (*Product, error) {
@@ -29,8 +37,10 @@ func NewShelf(id int, weight float64) (*Shelf, error) {
 		return nil, ErrorNegativeWeight
 	}
 	return &Shelf{
-		ID:         id,
-		CurrWeight: weight,
+		ID:            id,
+		CurrentWeight: weight,
+		Status:        "EMPTY",
+		Updated_at:    time.Now(),
 	}, nil
 }
 func (s *Shelf) SetProduct(p *Product, quont int) {
@@ -57,7 +67,7 @@ func (s *Shelf) UpdateWeight(weight float64) error {
 	if weight < 0 {
 		return ErrorNegativeWeight
 	}
-	s.CurrWeight = weight
+	s.CurrentWeight = weight
 	return nil
 }
 
@@ -65,14 +75,14 @@ func (s *Shelf) NeedsRefill() bool {
 	if s.Product == nil {
 		return false
 	}
-	return s.CurrWeight < s.Product.MinWeight
+	return s.CurrentWeight < s.Product.MinWeight
 }
 
 func (s *Shelf) GetQuantity() int {
 	if s.Product == nil || s.Product.Weight == 0 {
 		return 0
 	}
-	return int(s.CurrWeight / s.Product.Weight)
+	return int(math.Floor(s.CurrentWeight / s.Product.Weight))
 }
 
 func (p *Product) UpdateMinWeight(minWeight float64) error {

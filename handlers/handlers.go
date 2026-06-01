@@ -22,10 +22,6 @@ type AnsDTO struct {
 	Answer string    `json:"answer"`
 	Time   time.Time `json:"time"`
 }
-
-type ShelfDTO struct {
-	ID int `json:"id"`
-}
 type ProductDTO struct {
 	ProductID  int     `json:"product_id"`
 	ShelfID    int     `json:"shelf_id"`
@@ -33,6 +29,9 @@ type ProductDTO struct {
 	UnitWeight float64 `json:"unit_weight"`
 	Quantity   int     `json:"quantity"`
 	MinWeight  float64 `json:"min_weight"`
+}
+type ShelfDTO struct {
+	ID int `json:"id"`
 }
 
 func NewAnsDTO(str string) AnsDTO {
@@ -53,13 +52,20 @@ func NewHTTPHandlers(service *service.StockService) *HTTPHandlers {
 }
 
 func (h *HTTPHandlers) HandleGetStatus(w http.ResponseWriter, r *http.Request) {
-	status := h.service.GetFullStatus()
-
+	status, err := h.service.GetFullStatus(r.Context())
+	if err != nil {
+		errDTO := models.NewErrorDTO(err)
+		models.HTTPError(w, errDTO, err)
+		return
+	}
 	b, err := json.MarshalIndent(status, "", "    ")
 	if err != nil {
-		panic(err)
+		errDTO := models.NewErrorDTO(fmt.Errorf("ошибка маршалинга статуса: %w", err))
+		models.HTTPError(w, errDTO, err)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
 		fmt.Println("failed to HTTP response")
 		return
@@ -73,7 +79,7 @@ func (h *HTTPHandlers) HandleUpdateWeight(w http.ResponseWriter, r *http.Request
 		models.HTTPError(w, errDTO, err)
 		return
 	}
-	allert, err := h.service.UpdateProductWeight(data.ID, data.Weight)
+	allert, err := h.service.UpdateProductWeight(r.Context(), data.ID, data.Weight)
 	if err != nil {
 		errDTO := models.NewErrorDTO(err)
 		models.HTTPError(w, errDTO, err)
@@ -82,7 +88,9 @@ func (h *HTTPHandlers) HandleUpdateWeight(w http.ResponseWriter, r *http.Request
 	ans := NewAnsDTO(allert)
 	b, err := json.MarshalIndent(ans, "", "    ")
 	if err != nil {
-		panic(err)
+		errDTO := models.NewErrorDTO(fmt.Errorf("ошибка маршалинга ответа %w", err))
+		models.HTTPError(w, errDTO, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -107,12 +115,23 @@ func (h *HTTPHandlers) HandleAddShelf(w http.ResponseWriter, r *http.Request) {
 		models.HTTPError(w, errDTO, err)
 		return
 	}
-	if err := h.service.AddShelf(shelf); err != nil {
+	if err := h.service.AddShelf(r.Context(), shelf); err != nil {
 		errDTO := models.NewErrorDTO(err)
 		models.HTTPError(w, errDTO, err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	ans, err := json.MarshalIndent(shelf, "", "")
+	if err != nil {
+		errDTO := models.NewErrorDTO(err)
+		models.HTTPError(w, errDTO, err)
+		return
+	}
+	if _, err := w.Write(ans); err != nil {
+		fmt.Println("failed to http response")
+		return
+	}
 }
 
 func (h *HTTPHandlers) DeleteShelf(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +142,7 @@ func (h *HTTPHandlers) DeleteShelf(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errDTO.ToString(), http.StatusBadRequest)
 		return
 	}
-	if err := h.service.DeleteShelf(id); err != nil {
+	if err := h.service.DeleteShelf(r.Context(), id); err != nil {
 		errDTO := models.NewErrorDTO(err)
 		models.HTTPError(w, errDTO, err)
 		return
@@ -144,7 +163,7 @@ func (h *HTTPHandlers) HandleAddProduct(w http.ResponseWriter, r *http.Request) 
 		models.HTTPError(w, errDTO, err)
 		return
 	}
-	if err := h.service.FillShelf(recProduct.ShelfID, product, recProduct.Quantity); err != nil {
+	if err := h.service.FillShelf(r.Context(), recProduct.ShelfID, product); err != nil {
 		errDTO := models.NewErrorDTO(err)
 		models.HTTPError(w, errDTO, err)
 		return
@@ -167,11 +186,11 @@ func (h *HTTPHandlers) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		errDTO := models.NewErrorDTO(errors.New("invalid shelf ID format"))
+		errDTO := models.NewErrorDTO(errors.New("invalid product ID format"))
 		models.HTTPError(w, errDTO, err)
 		return
 	}
-	if err := h.service.DeleteProduct(id); err != nil {
+	if err := h.service.DeleteProduct(r.Context(), id); err != nil {
 		errDTO := models.NewErrorDTO(err)
 		models.HTTPError(w, errDTO, err)
 		return
@@ -183,11 +202,11 @@ func (h *HTTPHandlers) GetProduct(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		errDTO := models.NewErrorDTO(errors.New("invalid shelf ID format"))
+		errDTO := models.NewErrorDTO(errors.New("invalid product ID format"))
 		models.HTTPError(w, errDTO, err)
 		return
 	}
-	product, err := h.service.GetProduct(id)
+	product, err := h.service.GetProduct(r.Context(), id)
 	if err != nil {
 		errDTO := models.NewErrorDTO(err)
 		models.HTTPError(w, errDTO, err)
