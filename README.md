@@ -30,26 +30,12 @@
 
 * Go 1.25+
 * PostgreSQL 12+
-* Docker (опционально)
 
 ---
 
-## Установка и запуск
+###. Подготовка базы данных
 
-### 1. Клонирование репозитория
-```bash
-git clone https://github.com/midicowbell/IOT.git
-cd IOT
-```
-
-### 2. Установка зависимостей
-```bash
-go mod download
-```
-
-### 3. Подготовка базы данных
-
-Создайте базу данных и таблицы:
+Требуется создать базу данных и таблицы:
 
 ```sql
 CREATE DATABASE warehouse_iot;
@@ -81,28 +67,6 @@ CREATE TABLE weight_logs (
 ALTER TABLE shelves ADD CONSTRAINT fk_product 
     FOREIGN KEY (product_id) REFERENCES products(product_id);
 ```
-
-### 4. Запуск сервиса
-
-```bash
-go run main.go
-```
-
-Сервис запустится на `http://localhost:8080`
-
----
-
-## Конфигурация
-
-Строка подключения к БД устанавливается в `main.go`:
-
-```go
-url := "postgres://postgres:12345@localhost:5432/warehouse_iot"
-```
-
-Формат: `postgres://username:password@host:port/database`
-
----
 
 ## API Endpoints
 
